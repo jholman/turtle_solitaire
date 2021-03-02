@@ -147,7 +147,7 @@
 
       // yo students, this template string substitution stuff can lead to security disasters, this is like using hypodermics you found in the park.  don't do this.
       return $(`
-        <div class="tilewrapper" style="left: calc(50% + ${x} * var(--tile-width)); top: calc(50% + ${y} * var(--tile-height)); z-index: ${Math.ceil(10 * z - x + y + 10)}">
+        <div class="tilewrapper" style="left: calc(50% + (${x} - 0.5) * var(--tile-width)); top: calc(50% + (${y} - 0.5) * var(--tile-height)); z-index: ${Math.ceil(10 * z - x + y + y + 30)}">
           <div class="tile ${suitColorClass}" data-layout-id="${layoutId}" >
             <span class="label ${isSelected ? 'selected' : ''}">${tile.rank}${iconify(tile.suit)}</span>
           </div>
