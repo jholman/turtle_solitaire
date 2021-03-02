@@ -191,11 +191,12 @@
       render();
     }
 
-    function maybeRestart(event) {
-      if (layout.filter(o => o.present).length === 0) {
+    function restartIfAlreadyOver(event) {
+      updateScore();
+      if (score === 0) {
         layout.forEach(o => o.present = true);
         shuffleTileIds(layout);
-        score = 0;
+        updateScore();
         render();
       }
     }
@@ -210,7 +211,7 @@
       }
       $root.html($drawArea);
       $(".tile").click(click);
-      $drawArea.click(maybeRestart);
+      $drawArea.click(restartIfAlreadyOver);
     }
 
     render();
