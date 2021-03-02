@@ -164,7 +164,10 @@
     }
 
 
-    let score = 0;
+    let score = null;
+    function updateScore() {
+      score = layout.filter(o => o.present).length;
+    }
 
     function click(event) {
       let target = event.currentTarget;
@@ -199,7 +202,9 @@
 
     function render() {
       let $root = $('#root');
-      let $drawArea = $(`<div class="drawarea"><div class="score">${score || ''}</div></div>`)
+      updateScore();
+      let writtenScore = score === null ? '' : score === 0 ? 'VICTORY' : score;
+      let $drawArea = $(`<div class="drawarea"><div class="score">${writtenScore}</div></div>`)
       for (let layoutEntry of layout) {
         $drawArea.append(renderLayoutEntry(layoutEntry))
       }
