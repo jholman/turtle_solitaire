@@ -85,6 +85,15 @@
       right: 3%;
       font-size: 300%;
     }
+
+    .restart {
+      position: absolute;
+      top: 2%;
+      left: 3%;
+      font-size: 150%;
+      border-radius: 12px;
+      height: 2.25em;
+    }
   </style>
 </head>
 
@@ -189,18 +198,24 @@
       render();
     }
 
+    function restart() {
+      layout.forEach(o => o.present = true);
+      shuffleTileIds(layout);
+      score = 0;
+      render();
+    }
+
     function maybeRestart(event) {
       if (layout.filter(o => o.present).length === 0) {
-        layout.forEach(o => o.present = true);
-        shuffleTileIds(layout);
-        score = 0;
-        render();
+        restart();
       }
     }
 
     function render() {
       let $root = $('#root');
       let $drawArea = $(`<div class="drawarea"><div class="score">${score || ''}</div></div>`)
+      let $restartButton = $(`<button class='restart' >Forfeit</button>`).click(restart);
+      $drawArea.prepend($restartButton);
       for (let layoutEntry of layout) {
         $drawArea.append(renderLayoutEntry(layoutEntry))
       }
