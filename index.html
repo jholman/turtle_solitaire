@@ -1,0 +1,215 @@
+<html>
+
+<head>
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
+  <script src="https://code.jquery.com/jquery-3.5.1.js" integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
+    crossorigin="anonymous">
+    </script>
+
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      /* align horizontal */
+      align-items: center;
+      /* align vertical */
+
+    }
+
+    :root {
+      --tile-border: 1px;
+      --tile-margin: 2px;
+      --tile-width: 6%;
+      --tile-height: 9%;
+    }
+
+    .drawArea {
+      position: relative;
+      width: 90vw;
+      height: 90vh;
+      border-radius: 2em;
+      background-color: palegreen;
+      border: 3px solid black;
+    }
+
+    .tilewrapper {
+      box-sizing: border-box;
+      position: absolute;
+      padding: 2px;
+      width: var(--tile-width);
+      height: var(--tile-height);
+
+    }
+
+
+    .selected {
+      font-size: x-large;
+    }
+
+    .tile {
+      box-shadow: -5px 5px 1px black;
+      margin: 2px;
+      border-radius: 15%;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      /* align horizontal */
+      align-items: center;
+      /* align vertical */
+      border: 1px solid palegreen;
+    }
+
+    .tile.red {
+      color: red;
+      border-color: red;
+      background-color: lightpink;
+    }
+
+    .tile.black {
+      color: black;
+      border-color: black;
+      background-color: lightgray;
+    }
+
+    .tile.label {
+      display: inline-block;
+      vertical-align: middle;
+      line-height: normal;
+    }
+
+    .score {
+      position: absolute;
+      top: 2%;
+      right: 3%;
+      font-size: 300%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root" />
+  <script>
+    let tiles = [];
+    for (let suit of 'HSDC') {
+      for (let rank of ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K']) {
+        tiles.push({ suit, rank })
+      }
+    }
+
+    let layout = [];
+    for (let x = -2; x < 3; x++) {
+      for (let y = -2; y < 3; y++) {
+        layout.push({ x, y, z: 0 });
+        if (Math.max(Math.abs(x), Math.abs(y)) <= 1) { layout.push({ x, y, z: 1 }); }
+        // if (Math.max(Math.abs(x), Math.abs(y)) <= 0) { layout.push({ x, y, z: 2 }); }
+      }
+    }
+    for (let x = -2.5; x < 3.5; x++) {
+      for (let y of [-3, 3]) {
+        layout.push({ x, y, z: 0 });
+      }
+    }
+    for (let x of [-0.5, 0.5]) {
+      for (let y of [-0.5, 0.5]) {
+        layout.push({ x, y, z: 2 });
+      }
+    }
+    layout.push({ x: -3, y: -1.5, z: 0 })
+    layout.push({ x: 3, y: 1.5, z: 0 })
+    // layout.push({ x: 4.5, y: -4, z: 0 })
+
+    for (let lei in layout) {
+      layout[lei] = { ...layout[lei], present: true, tileId: lei, layoutId: lei };
+    }
+
+    function shuffleTileIds(array) {
+      for (let i = 0; i < array.length; i++) {
+        let j = Math.floor(Math.random() * (array.length - i)) + i;
+        [array[i].tileId, array[j].tileId] = [array[j].tileId, array[i].tileId]
+      }
+    }
+    shuffleTileIds(layout);
+
+
+    let selected = null;
+
+    function renderLayoutEntry(layoutEntry) {
+      let { x, y, z, present, layoutId, tileId } = layoutEntry;
+      if (!present) { return; }
+      let tile = tiles[tileId];
+      let suitColorClass = tile.suit in { H: 1, D: 1 } ? 'red' : 'black';
+      let isSelected = selected === +layoutEntry.layoutId;
+
+      // yo students, this template string substitution stuff can lead to security disasters, this is like using hypodermics you found in the park.  don't do this.
+      return $(`
+        <div class="tilewrapper" style="left: calc(50% + ${x} * var(--tile-width)); top: calc(50% + ${y} * var(--tile-height)); z-index: ${Math.ceil(10 * z - x + y + 10)}">
+          <div class="tile ${suitColorClass}" data-layout-id="${layoutId}" >
+            <span class="label ${isSelected ? 'selected' : ''}">${tile.rank}${tile.suit}</span>
+          </div>
+        </div>
+      `)
+
+    }
+
+    function layoutReachable(layoutId) {
+      let { x, y, z } = layout[layoutId];
+      let numAbove = layout.filter(o => o.present).filter(other => other.z > z && Math.abs(other.x - x) < 1.0 && Math.abs(other.y - y) < 1.0).length;
+      let numLeft = layout.filter(o => o.present).filter(other => other.z === z && (x - other.x) > 0 && (x - other.x) < 2.0 && Math.abs(other.y - y) < 1.0).length;
+      let numRight = layout.filter(o => o.present).filter(other => other.z === z && (x - other.x) < 0 && (x - other.x) > -2.0 && Math.abs(other.y - y) < 1.0).length;
+      if (numAbove > 0) { return false; }
+      if (numLeft > 0 && numRight > 0) { return false; }
+      return true;
+    }
+
+
+    let score = 0;
+
+    function click(event) {
+      let target = event.currentTarget;
+      let layoutId = Number(target.dataset.layoutId);
+      if (!layoutReachable(layoutId)) {
+        return;
+      }
+      if (selected === null) {
+        selected = layoutId
+      } else {
+        if (selected !== layoutId) {
+          let thisRank = tiles[layout[layoutId].tileId].rank;
+          let selectedRank = tiles[layout[selected].tileId].rank;
+          if (thisRank == selectedRank) {
+            layout[layoutId].present = layout[selected].present = false;
+            score++;
+          }
+        }
+        selected = null;
+      }
+      render();
+    }
+
+    function maybeRestart(event) {
+      if (layout.filter(o => o.present).length === 0) {
+        layout.forEach(o => o.present = true);
+        shuffleTileIds(layout);
+        score = 0;
+        render();
+      }
+    }
+
+    function render() {
+      let $root = $('#root');
+      let $drawArea = $(`<div class="drawarea"><div class="score">${score || ''}</div></div>`)
+      for (let layoutEntry of layout) {
+        $drawArea.append(renderLayoutEntry(layoutEntry))
+      }
+      $root.html($drawArea);
+      $(".tile").click(click);
+      $drawArea.click(maybeRestart);
+    }
+
+    render();
+  </script>
+</body>
+
+</html>
