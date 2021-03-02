@@ -136,6 +136,9 @@
     let selected = null;
 
     function renderLayoutEntry(layoutEntry) {
+      function iconify(suit) {
+        return { H: "♥", S: "♠", D: "♦", C: "♣", }[suit] || suit;
+      }
       let { x, y, z, present, layoutId, tileId } = layoutEntry;
       if (!present) { return; }
       let tile = tiles[tileId];
@@ -146,7 +149,7 @@
       return $(`
         <div class="tilewrapper" style="left: calc(50% + ${x} * var(--tile-width)); top: calc(50% + ${y} * var(--tile-height)); z-index: ${Math.ceil(10 * z - x + y + 10)}">
           <div class="tile ${suitColorClass}" data-layout-id="${layoutId}" >
-            <span class="label ${isSelected ? 'selected' : ''}">${tile.rank}${tile.suit}</span>
+            <span class="label ${isSelected ? 'selected' : ''}">${tile.rank}${iconify(tile.suit)}</span>
           </div>
         </div>
       `)
